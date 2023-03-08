@@ -1,0 +1,40 @@
+version: '3.3'
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        env_file:
+            - .env
+        volumes:
+            - ./data:/app/data:rw
+        ports:
+            - '${PORT}:${PORT}'
+        healthcheck:
+            test: ["CMD-SHELL", "/app/healthcheck.sh"]
+            interval: 2s
+            timeout: 10s
+            retries: 3
+
+    db:
+        image: postgres:15-alpine3.17
+        environment:
+            POSTGRES_USER: ${DATABASE_USER}
+            POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+            POSTGRES_DB: ${DATABASE_NAME}
+            PGDATA: /data/postgres
+        restart: unless-stopped
+        ports:
+            - 127.0.0.1:${DATABASE_PORT}:${DATABASE_PORT}
+        volumes:
+            - './data/postgres:/data/postgres'
+        command: -p ${DATABASE_PORT}
+    db_admin:
+        image: dbeaver/cloudbeaver
+        restart: unless-stopped
+        ports:
+            - '${DB_ADMIN_PORT}:8978'
+        volumes:
+            - ./data:/opt/data:rw
+            - ./data/db_admin:/opt/cloudbeaver/workspace
